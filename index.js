@@ -1,31 +1,39 @@
-const puppeteer = require('puppeteer'); // v 1.1.0
-const { URL } = require('url');
-const fse = require('fs-extra'); // v 5.0.0
+const scrape = require('website-scraper');
+const PuppeteerPlugin = require('website-scraper-puppeteer');
 const path = require('path');
-async function start(urlToFetch) {
-    /* 1 */
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-  
-    /* 2 */
-    page.on('response', async (response) => {
-      const url = new URL(response.url());
-      let filePath = path.resolve(`./output${url.pathname}`);
-      if (path.extname(url.pathname).trim() === '') {
-        filePath = `${filePath}/index.html`;
-      }
-      await fse.outputFile(filePath, await response.buffer());
-    });
-  
-    /* 3 */
-    await page.goto(urlToFetch, {
-      waitUntil: 'networkidle2'
-    });
-  
-    /* 4 */
-    setTimeout(async () => {
-      await browser.close();
-    }, 60000 * 4);
-  }
-  
-  start('http://canada.nstl.com/imaginghardware/');
+
+async function start(){
+    let amount = 690;
+    let amountLeft = amount;
+    for (i = 590; i < amount; i++) {
+        await new Promise((resolve,reject)=>{
+            setTimeout(() => {
+                scrape({
+                    // Provide the URL(s) of the website(s) that you want to clone
+                    // In this example, you can clone the Our Code World website
+                    urls: [`http://web-old.archive.org/web/20191123163644/http://fortydayministry.com/node/${i}`],
+                    // Specify the path where the content should be saved
+                    // In this case, in the current directory inside the ourcodeworld dir
+                    directory: path.resolve(__dirname, `resultado/node${i}`),
+                    // Load the Puppeteer plugin
+                    plugins: [
+                        new PuppeteerPlugin({
+                            launchOptions: {
+                                // If you set  this to true, the headless browser will show up on screen
+                                headless: true
+                            }, /* optional */
+                            scrollToBottom: {
+                                timeout: 10000,
+                                viewportN: 10
+                            } /* optional */
+                        })
+                    ]
+                })
+                amountLeft--;
+                console.log(amountLeft);
+                resolve(amountLeft);
+            }, 20000);
+        });
+    }
+}
+start();
